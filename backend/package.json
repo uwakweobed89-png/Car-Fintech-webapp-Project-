@@ -1,0 +1,23 @@
+{
+  "name": "car-fintech-backend",
+  "version": "1.0.0",
+  "description": "Fintech Car Marketplace Backend API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "migrate": "node src/migrate.js",
+    "update-images": "node src/update-images.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.600.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "supertest": "^7.0.0"
+  }
+}

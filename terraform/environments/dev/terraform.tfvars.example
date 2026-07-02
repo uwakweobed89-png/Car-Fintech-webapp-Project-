@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored) and fill in the real password.
+# Never commit terraform.tfvars.
+
+db_password = "CHANGE_ME_TO_A_REAL_SECRET"
+
+# Defaults in variables.tf already match the live CLOUD-OPS-project resources
+# (myapp-vpc, cloudops-cluster, fintech-payment-api ECR repo) — override only
+# if those names change.
