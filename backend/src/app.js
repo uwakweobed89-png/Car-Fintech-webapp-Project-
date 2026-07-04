@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 const { Pool } = require('pg');
+const { register, httpRequestDuration, purchasesTotal, creditChecksTotal, fraudChecksTotal } = require('./metrics');
 
 const app = express();
 
@@ -14,6 +15,16 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 
 app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : {}));
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const durationSeconds = Number(process.hrtime.bigint() - start) / 1e9;
+    const route = req.route ? req.route.path : req.path;
+    httpRequestDuration.observe({ method: req.method, route, status_code: res.statusCode }, durationSeconds);
+  });
+  next();
+});
 
 // ── In-memory fallback (works without RDS) ──────────────────────────────────
 
@@ -165,6 +176,11 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: pool ? 'connected' : 'in-memory',
   });
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // ── Cars ──────────────────────────────────────────────────────────────────────
