@@ -19,3 +19,7 @@ output "oidc_provider_arn" {
 output "cluster_oidc_issuer_url" {
   value = module.eks.cluster_oidc_issuer_url
 }
+
+output "backend_irsa_role_arn" {
+  value = module.backend_irsa.iam_role_arn
+}
