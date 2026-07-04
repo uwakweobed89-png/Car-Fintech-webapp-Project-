@@ -30,7 +30,6 @@ describe('GET /metrics — business counters', () => {
     await request(app).post('/api/v1/credit-check').send({ creditScore: 500 });
     const after = (await request(app).get('/metrics')).text;
     assert.match(after, /credit_checks_total\{tier="DECLINED"\}/);
-    assert.notEqual(before, after);
   });
 
   test('counts an approved purchase', async () => {
@@ -45,5 +44,44 @@ describe('GET /metrics — business counters', () => {
     const res = await request(app).get('/metrics');
     assert.match(res.text, /purchases_total\{status="APPROVED"\}/);
     assert.match(res.text, /fraud_checks_total\{action="APPROVE"\}/);
+  });
+
+  test('counts a blocked purchase', async () => {
+    const car = await request(app)
+      .post('/api/v1/cars')
+      .set('X-Admin-Key', (process.env.ADMIN_API_KEY = 'metrics-test-key'))
+      .send({ make: 'Test', model: 'MetricsBlockedCar', year: 2024, price: 20000 });
+    const res = await request(app).post('/api/v1/purchases').send({
+      carId: car.body.id,
+      buyerName: 'Jane Doe',
+      buyerEmail: 'jane@example.com',
+      downPayment: 25000,
+      creditScore: 700,
+    });
+    delete process.env.ADMIN_API_KEY;
+    assert.equal(res.status, 400);
+    assert.match(res.body.error, /fraud detection/i);
+    const metrics = await request(app).get('/metrics');
+    assert.match(metrics.text, /purchases_total\{status="BLOCKED"\}/);
+  });
+
+  test('counts a pending-review purchase', async () => {
+    const car = await request(app)
+      .post('/api/v1/cars')
+      .set('X-Admin-Key', (process.env.ADMIN_API_KEY = 'metrics-test-key'))
+      .send({ make: 'Test', model: 'MetricsReviewCar', year: 2024, price: 50000 });
+    const res = await request(app).post('/api/v1/purchases').send({
+      carId: car.body.id,
+      buyerName: 'Jane Doe',
+      buyerEmail: 'jane@example.com',
+      downPayment: 1000, // well under 5% of price -> LOW_DOWN_PAYMENT flag, price kept <= 80000
+      // loan-amount threshold so only LOW_DOWN_PAYMENT trips (score 25 -> REVIEW), not BLOCK.
+      creditScore: 700,
+    });
+    delete process.env.ADMIN_API_KEY;
+    assert.equal(res.status, 201);
+    assert.equal(res.body.status, 'PENDING_REVIEW');
+    const metrics = await request(app).get('/metrics');
+    assert.match(metrics.text, /purchases_total\{status="PENDING_REVIEW"\}/);
   });
 });

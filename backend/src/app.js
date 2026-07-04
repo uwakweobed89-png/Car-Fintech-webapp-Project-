@@ -313,7 +313,6 @@ app.post('/api/v1/purchases', async (req, res) => {
     const monthlyPayment = calculateMonthlyPayment(loanAmount, credit.interestRate, Number(loanTermMonths));
     const totalCost      = Number((monthlyPayment * Number(loanTermMonths) + down).toFixed(2));
     const status         = fraud.action === 'REVIEW' ? 'PENDING_REVIEW' : 'APPROVED';
-    purchasesTotal.inc({ status });
 
     if (pool) {
       await pool.query('UPDATE cars SET available = false WHERE id = $1', [carId]);
@@ -325,6 +324,7 @@ app.post('/api/v1/purchases', async (req, res) => {
         [carId, buyerName, buyerEmail, purchasePrice, loanAmount, down,
          monthlyPayment, loanTermMonths, credit.interestRate, credit.tier, fraud.risk, status]
       );
+      purchasesTotal.inc({ status });
       return res.status(201).json({ purchase: result.rows[0], totalCost });
     }
 
@@ -345,6 +345,7 @@ app.post('/api/v1/purchases', async (req, res) => {
       createdAt: new Date().toISOString(),
     };
     PURCHASES.push(purchase);
+    purchasesTotal.inc({ status });
     res.status(201).json(purchase);
   } catch (err) {
     res.status(500).json({ error: err.message });
