@@ -13,6 +13,10 @@ data "aws_secretsmanager_secret" "admin_api_key" {
   name = "car-fintech/admin-api-key"
 }
 
+data "aws_kms_key" "rds" {
+  key_id = "alias/car-fintech-rds"
+}
+
 module "backend_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.0"
@@ -45,6 +49,11 @@ resource "aws_iam_policy" "backend_read_secrets" {
           data.aws_secretsmanager_secret.rds_credentials.arn,
           data.aws_secretsmanager_secret.admin_api_key.arn,
         ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "kms:Decrypt"
+        Resource = data.aws_kms_key.rds.arn
       }
     ]
   })
