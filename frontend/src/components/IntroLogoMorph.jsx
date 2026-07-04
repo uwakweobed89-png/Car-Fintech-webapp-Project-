@@ -38,6 +38,12 @@ export default function IntroLogoMorph({ progress }) {
     };
     update();
     window.addEventListener('resize', update);
+    // The wordmark renders in the Archivo webfont, loaded async via <link>.
+    // If it swaps in after this initial measurement (the common case — fonts
+    // rarely beat first paint), offsetWidth/Height silently change out from
+    // under baseSize, and every scale/position value derived from it goes
+    // stale mid-scroll — this is what caused the morph to snap/jump.
+    document.fonts?.ready.then(update);
     return () => window.removeEventListener('resize', update);
   }, []);
 
@@ -96,6 +102,7 @@ export default function IntroLogoMorph({ progress }) {
             position: 'fixed',
             top: 0,
             left: 0,
+            fontFamily: 'var(--font-display)',
             fontSize: NAV_FONT,
             fontWeight: 800,
             letterSpacing: '-0.01em',

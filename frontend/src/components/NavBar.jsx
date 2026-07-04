@@ -22,7 +22,12 @@ export default function NavBar({ opacity = 1 }) {
       style={{
         opacity,
         visibility: opacity < 0.05 ? 'hidden' : 'visible',
-        pointerEvents: opacity < 0.5 ? 'none' : 'auto',
+        // Clickable as soon as it's not hidden, rather than waiting for it to
+        // be nearly opaque — the original 0.5 threshold left the hamburger
+        // (mobile's only nav entry point) locked out for most of the intro
+        // scroll. This doesn't touch the fade curve itself, just how early
+        // the already-appearing bar responds to input.
+        pointerEvents: opacity < 0.05 ? 'none' : 'auto',
         transition: 'opacity 0.15s ease',
       }}
     >
