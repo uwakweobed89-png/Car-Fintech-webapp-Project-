@@ -8,7 +8,7 @@ node_modules/
 *.tfstate
 *.tfstate.*
 *.tfplan
-tfplan
+tfplan*
 dist/
 build/
 .DS_Store
