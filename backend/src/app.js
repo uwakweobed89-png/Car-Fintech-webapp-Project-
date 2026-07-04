@@ -288,7 +288,9 @@ app.post('/api/v1/purchases', async (req, res) => {
 
     // Credit check
     const credit = checkCredit(Number(creditScore));
+    creditChecksTotal.inc({ tier: credit.tier });
     if (!credit.approved) {
+      purchasesTotal.inc({ status: 'DECLINED' });
       return res.status(400).json({
         error: 'Credit application declined',
         creditTier: credit.tier,
@@ -298,7 +300,9 @@ app.post('/api/v1/purchases', async (req, res) => {
 
     // Fraud check
     const fraud = detectFraud({ loanAmount, downPayment: down, purchasePrice });
+    fraudChecksTotal.inc({ action: fraud.action });
     if (fraud.action === 'BLOCK') {
+      purchasesTotal.inc({ status: 'BLOCKED' });
       return res.status(400).json({
         error: 'Transaction blocked by fraud detection',
         flags: fraud.flags,
@@ -309,6 +313,7 @@ app.post('/api/v1/purchases', async (req, res) => {
     const monthlyPayment = calculateMonthlyPayment(loanAmount, credit.interestRate, Number(loanTermMonths));
     const totalCost      = Number((monthlyPayment * Number(loanTermMonths) + down).toFixed(2));
     const status         = fraud.action === 'REVIEW' ? 'PENDING_REVIEW' : 'APPROVED';
+    purchasesTotal.inc({ status });
 
     if (pool) {
       await pool.query('UPDATE cars SET available = false WHERE id = $1', [carId]);
@@ -426,7 +431,9 @@ app.post('/api/v1/loan-calculator', (req, res) => {
 app.post('/api/v1/credit-check', (req, res) => {
   const { creditScore } = req.body;
   if (!creditScore) return res.status(400).json({ error: 'creditScore is required' });
-  res.json(checkCredit(Number(creditScore)));
+  const result = checkCredit(Number(creditScore));
+  creditChecksTotal.inc({ tier: result.tier });
+  res.json(result);
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────
