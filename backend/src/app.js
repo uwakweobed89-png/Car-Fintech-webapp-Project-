@@ -99,6 +99,44 @@ function detectFraud({ loanAmount, downPayment, purchasePrice }) {
   return { score, flags, risk, action };
 }
 
+// ── Admin access (protects buyer PII / financial detail) ────────────────────
+//
+// Read at call time (not cached at module load) so tests can toggle
+// ADMIN_API_KEY per-case. Unset means the admin surface stays locked —
+// there's no "wide open if unconfigured" fallback here, unlike ALLOWED_ORIGINS.
+
+function isAdmin(req) {
+  const key = process.env.ADMIN_API_KEY;
+  return Boolean(key) && req.get('X-Admin-Key') === key;
+}
+
+function requireAdmin(req, res) {
+  if (isAdmin(req)) return true;
+  res.status(403).json({ error: 'Admin access required' });
+  return false;
+}
+
+function maskBuyerName(fullName) {
+  if (!fullName) return fullName;
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
+
+// Public projection of a purchase: no email, no loan/credit/fraud detail —
+// just enough for the "recent purchases" feed on the frontend.
+function publicPurchaseView(p) {
+  return {
+    id: p.id,
+    buyerName: maskBuyerName(p.buyerName ?? p.buyer_name),
+    car: p.car ?? (p.make ? `${p.year} ${p.make} ${p.model}` : undefined),
+    purchasePrice: p.purchasePrice ?? p.purchase_price,
+    monthlyPayment: p.monthlyPayment ?? p.monthly_payment,
+    status: p.status,
+    createdAt: p.createdAt ?? p.created_at,
+  };
+}
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 app.get('/', (req, res) => {
@@ -292,21 +330,29 @@ app.post('/api/v1/purchases', async (req, res) => {
 
 app.get('/api/v1/purchases', async (req, res) => {
   try {
+    const admin = isAdmin(req);
+
     if (pool) {
       const result = await pool.query(
         `SELECT p.*, c.make, c.model, c.year
          FROM purchases p JOIN cars c ON p.car_id = c.id
          ORDER BY p.created_at DESC`
       );
-      return res.json({ count: result.rows.length, purchases: result.rows });
+      const purchases = admin ? result.rows : result.rows.map(publicPurchaseView);
+      return res.json({ count: purchases.length, purchases });
     }
-    res.json({ count: PURCHASES.length, purchases: PURCHASES });
+
+    const purchases = admin ? PURCHASES : PURCHASES.map(publicPurchaseView);
+    res.json({ count: purchases.length, purchases });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Full buyer detail (email, loan amount, credit tier, fraud risk) — admin only.
+// Nothing in the frontend calls this; it exists for internal/ops lookups.
 app.get('/api/v1/purchases/:id', async (req, res) => {
+  if (!requireAdmin(req, res)) return;
   try {
     const id = Number(req.params.id);
     if (pool) {
