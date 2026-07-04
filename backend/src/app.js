@@ -20,7 +20,7 @@ app.use((req, res, next) => {
   const start = process.hrtime.bigint();
   res.on('finish', () => {
     const durationSeconds = Number(process.hrtime.bigint() - start) / 1e9;
-    const route = req.route ? req.route.path : req.path;
+    const route = req.route ? req.route.path : 'unmatched';
     httpRequestDuration.observe({ method: req.method, route, status_code: res.statusCode }, durationSeconds);
   });
   next();
