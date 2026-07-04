@@ -50,7 +50,7 @@ Tests run against the in-memory data path only — no AWS/RDS required.
 | GET    | `/health`                 | Health check, reports DB connection state                |
 | GET    | `/api/v1/cars`            | List cars (`?available=true&make=Toyota&maxPrice=40000`) |
 | GET    | `/api/v1/cars/:id`        | Get a single car                                          |
-| POST   | `/api/v1/cars`            | Add a car listing                                          |
+| POST   | `/api/v1/cars`            | Add a car listing (admin — requires `X-Admin-Key`)          |
 | POST   | `/api/v1/purchases`       | Buy a car — runs credit check + fraud detection            |
 | GET    | `/api/v1/purchases`       | List all purchases                                         |
 | GET    | `/api/v1/purchases/:id`   | Get a single purchase                                       |

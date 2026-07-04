@@ -213,7 +213,9 @@ app.get('/api/v1/cars/:id', async (req, res) => {
   }
 });
 
+// Creating listings is admin-only — nothing in the frontend calls this route.
 app.post('/api/v1/cars', async (req, res) => {
+  if (!requireAdmin(req, res)) return;
   try {
     const { make, model, year, price, mileage = 0, color, image_url } = req.body;
     if (!make || !model || !year || !price) {

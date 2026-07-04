@@ -3,11 +3,23 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const { app } = require('../src/app');
 
+// POST /api/v1/cars is admin-only; temporarily set a key just for the create
+// call and restore whatever ADMIN_API_KEY the surrounding test had (if any),
+// so this helper doesn't interfere with the admin-key tests below.
 async function createCar(overrides = {}) {
-  const res = await request(app)
-    .post('/api/v1/cars')
-    .send({ make: 'Test', model: 'Model', year: 2024, price: 30000, ...overrides });
-  return res.body;
+  const key = 'test-admin-key';
+  const prev = process.env.ADMIN_API_KEY;
+  process.env.ADMIN_API_KEY = key;
+  try {
+    const res = await request(app)
+      .post('/api/v1/cars')
+      .set('X-Admin-Key', key)
+      .send({ make: 'Test', model: 'Model', year: 2024, price: 30000, ...overrides });
+    return res.body;
+  } finally {
+    if (prev === undefined) delete process.env.ADMIN_API_KEY;
+    else process.env.ADMIN_API_KEY = prev;
+  }
 }
 
 describe('POST /api/v1/purchases', () => {

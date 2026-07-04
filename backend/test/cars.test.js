@@ -31,21 +31,55 @@ describe('GET /api/v1/cars/:id', () => {
   });
 });
 
-describe('POST /api/v1/cars', () => {
+describe('POST /api/v1/cars — admin only', () => {
+  test('rejects anonymous requests', async () => {
+    const res = await request(app)
+      .post('/api/v1/cars')
+      .send({ make: 'Kia', model: 'Optima', year: 2024, price: 27000 });
+    assert.equal(res.status, 403);
+  });
+
+  test('rejects requests with the wrong admin key', async () => {
+    process.env.ADMIN_API_KEY = 'test-admin-key';
+    try {
+      const res = await request(app)
+        .post('/api/v1/cars')
+        .set('X-Admin-Key', 'wrong-key')
+        .send({ make: 'Kia', model: 'Optima', year: 2024, price: 27000 });
+      assert.equal(res.status, 403);
+    } finally {
+      delete process.env.ADMIN_API_KEY;
+    }
+  });
+
   test('rejects missing required fields', async () => {
-    const res = await request(app).post('/api/v1/cars').send({ make: 'Kia' });
-    assert.equal(res.status, 400);
+    process.env.ADMIN_API_KEY = 'test-admin-key';
+    try {
+      const res = await request(app)
+        .post('/api/v1/cars')
+        .set('X-Admin-Key', 'test-admin-key')
+        .send({ make: 'Kia' });
+      assert.equal(res.status, 400);
+    } finally {
+      delete process.env.ADMIN_API_KEY;
+    }
   });
 
   test('creates a car and it becomes fetchable', async () => {
-    const created = await request(app)
-      .post('/api/v1/cars')
-      .send({ make: 'Kia', model: 'Optima', year: 2024, price: 27000 });
-    assert.equal(created.status, 201);
-    assert.equal(created.body.available, true);
+    process.env.ADMIN_API_KEY = 'test-admin-key';
+    try {
+      const created = await request(app)
+        .post('/api/v1/cars')
+        .set('X-Admin-Key', 'test-admin-key')
+        .send({ make: 'Kia', model: 'Optima', year: 2024, price: 27000 });
+      assert.equal(created.status, 201);
+      assert.equal(created.body.available, true);
 
-    const fetched = await request(app).get(`/api/v1/cars/${created.body.id}`);
-    assert.equal(fetched.status, 200);
-    assert.equal(fetched.body.model, 'Optima');
+      const fetched = await request(app).get(`/api/v1/cars/${created.body.id}`);
+      assert.equal(fetched.status, 200);
+      assert.equal(fetched.body.model, 'Optima');
+    } finally {
+      delete process.env.ADMIN_API_KEY;
+    }
   });
 });
