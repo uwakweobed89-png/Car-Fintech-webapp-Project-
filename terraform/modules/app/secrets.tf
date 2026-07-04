@@ -70,3 +70,45 @@ resource "aws_iam_role_policy_attachment" "ecs_read_rds_secret" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = aws_iam_policy.read_rds_secret.arn
 }
+
+# Admin API key — injected as a container env var by ECS itself (via the
+# execution role, resolved before the container starts), unlike
+# DB_SECRET_ARN which the app resolves at runtime via the task role. That's
+# why the read permission below attaches to ecs_execution_role, not
+# ecs_task_role.
+resource "aws_secretsmanager_secret" "admin_api_key" {
+  name                    = "${var.project_name}/admin-api-key"
+  description             = "Shared secret for admin-only API endpoints (X-Admin-Key header) on ${var.project_name}"
+  recovery_window_in_days = 7
+
+  tags = {
+    Name    = "${var.project_name}-admin-api-key"
+    Project = var.project_name
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "admin_api_key" {
+  secret_id     = aws_secretsmanager_secret.admin_api_key.id
+  secret_string = var.admin_api_key
+}
+
+resource "aws_iam_policy" "read_admin_api_key_secret" {
+  name        = "${var.project_name}-read-admin-api-key-secret"
+  description = "Allows the ECS execution role to inject the ${var.project_name} admin API key at task startup"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+        Resource = aws_secretsmanager_secret.admin_api_key.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_read_admin_api_key_secret" {
+  role       = aws_iam_role.ecs_execution_role.name
+  policy_arn = aws_iam_policy.read_admin_api_key_secret.arn
+}

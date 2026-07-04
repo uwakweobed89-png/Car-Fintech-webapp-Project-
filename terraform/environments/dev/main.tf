@@ -36,6 +36,7 @@ module "app" {
   environment          = var.environment
   aws_region           = var.aws_region
   db_password          = var.db_password
+  admin_api_key        = var.admin_api_key
   container_image_tag  = var.container_image_tag
   desired_count        = var.desired_count
 

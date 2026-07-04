@@ -20,6 +20,11 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "admin_api_key" {
+  type      = string
+  sensitive = true
+}
+
 variable "container_image_tag" {
   type    = string
   default = "latest"

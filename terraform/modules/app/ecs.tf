@@ -58,6 +58,9 @@ resource "aws_ecs_task_definition" "app" {
         { name = "AWS_REGION", value = var.aws_region },
         { name = "ALLOWED_ORIGINS", value = var.allowed_origins }
       ]
+      secrets = [
+        { name = "ADMIN_API_KEY", valueFrom = aws_secretsmanager_secret.admin_api_key.arn }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {

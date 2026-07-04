@@ -70,6 +70,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "admin_api_key" {
+  description = "Shared secret for admin-only API endpoints (sent as X-Admin-Key)"
+  type        = string
+  sensitive   = true
+}
+
 variable "container_image_tag" {
   description = "Image tag to deploy from the existing ECR repository"
   type        = string
