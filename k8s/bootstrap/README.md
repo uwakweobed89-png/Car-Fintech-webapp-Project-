@@ -24,11 +24,13 @@ automatically — commit and push, ArgoCD picks it up.
    `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 6. Access the UI: `kubectl port-forward svc/argocd-server -n argocd 8080:443`, browse to `https://localhost:8080`.
 
-> **Note:** `root-app.yaml` currently points `targetRevision` at
+> **Note:** `root-app.yaml` currently points its git `targetRevision` at
 > `worktree-eks-monitoring` instead of `master`. This is a tracked,
 > human-approved deviation while this work lives on an isolated branch
 > (already pushed to origin, not yet merged). Flip it back to `master` once
-> this branch is merged.
+> this branch is merged — along with the other branch-pinned Application
+> manifests (see the "Prerequisites" section of `k8s/RUNBOOK.md` for the full
+> list: 4 lines across 3 files; leave the `65.5.1` Helm chart pin alone).
 
 Teardown: delete the `argocd`, `backend`, and `monitoring` namespaces before
 `terraform destroy` in `terraform/environments/dev-eks/` (see the root

@@ -30,13 +30,17 @@ stand-up doesn't rediscover them the hard way.
 
 2. **`targetRevision` on the ArgoCD Applications.** While this work lives on
    the `worktree-eks-monitoring` branch (not yet merged), every ArgoCD
-   `Application` manifest points `targetRevision` at that branch instead of
-   `master`:
-   - `k8s/bootstrap/root-app.yaml`
-   - `k8s/apps/backend/application.yaml`
-   - `k8s/apps/monitoring/application.yaml`
-   **Flip all three back to `master` once this branch is merged**, or ArgoCD
-   will keep tracking a branch that may no longer exist.
+   `Application` manifest points its **git** `targetRevision` at that branch
+   instead of `master`. There are **4 branch-pinned lines across 3 files**:
+   - `k8s/bootstrap/root-app.yaml` — 1 line
+   - `k8s/apps/backend/application.yaml` — 1 line
+   - `k8s/apps/monitoring/application.yaml` — **2 lines** (it has two git
+     sources: the values ref and the Kustomize path)
+   **Flip all 4 back to `master` once this branch is merged.** Leave the third
+   `targetRevision: 65.5.1` in `monitoring/application.yaml` alone — that's the
+   kube-prometheus-stack **Helm chart version**, not a git ref. Quick check:
+   `grep -rn 'targetRevision' k8s/` — every line except the `65.5.1` one should
+   read `master` after the flip.
 
 ---
 
