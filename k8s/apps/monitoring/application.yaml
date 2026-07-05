@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 65.5.1
+      helm:
+        valueFiles:
+          - $values/k8s/apps/monitoring/values.yaml
+    - repoURL: https://github.com/uwakweobed89-png/Car-Fintech-webapp-Project-.git
+      targetRevision: worktree-eks-monitoring
+      ref: values
+    - repoURL: https://github.com/uwakweobed89-png/Car-Fintech-webapp-Project-.git
+      targetRevision: worktree-eks-monitoring
+      path: k8s/apps/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
