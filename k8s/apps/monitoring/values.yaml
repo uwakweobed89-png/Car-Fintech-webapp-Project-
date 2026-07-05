@@ -1,3 +1,11 @@
+# CRDs installed once directly (kubectl apply --server-side, outside ArgoCD's
+# management) — the chart's own last-applied-configuration annotation exceeds
+# kubectl's 262144-byte limit for several of these CRDs, and having ArgoCD's
+# controller track ~10 large CRDs alongside the rest of the stack was pushing
+# it into repeated OOMKills on this cluster's unsized application-controller.
+crds:
+  enabled: false
+
 # Fargate has no visible nodes for a DaemonSet to run on — disable it.
 nodeExporter:
   enabled: false
