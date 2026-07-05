@@ -5,6 +5,13 @@ credit scores and down payments) against the backend so the Grafana
 dashboard in `k8s/apps/monitoring/` has real, varying data to show instead
 of flat empty graphs.
 
+Requires Node 18+ (uses the global `fetch`).
+
+> **Heads-up:** `npm start` below submits real purchases and mutates the
+> shared production database — see "Note on the shared database". For a
+> safe dashboard demo that touches no data, use the read-only snippet in
+> that section instead.
+
 ## Usage
 
 1. Port-forward the backend Service:

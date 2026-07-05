@@ -6,5 +6,8 @@
   "main": "generate-traffic.js",
   "scripts": {
     "start": "node generate-traffic.js"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
