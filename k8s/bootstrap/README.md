@@ -6,7 +6,19 @@ automatically — commit and push, ArgoCD picks it up.
 
 1. `kubectl create namespace argocd`
 2. `helm repo add argo https://argoproj.github.io/argo-helm && helm repo update`
-3. `helm install argocd argo/argo-cd --namespace argocd --version 7.7.3`
+3. Install ArgoCD **with a memory reservation on the application-controller**:
+   ```bash
+   helm install argocd argo/argo-cd --namespace argocd --version 7.7.3 \
+     --set controller.resources.requests.memory=1536Mi \
+     --set controller.resources.limits.memory=3Gi
+   ```
+   The `--set` flags are **required**, not optional. A bare `helm install`
+   leaves the application-controller with no memory limits (BestEffort QoS);
+   on Fargate it then gets OOMKilled (exit 137) in a crash loop the moment it
+   tries to reconcile the `monitoring` Application's kube-prometheus-stack
+   (~90 resources), and the monitoring namespace never populates. These values
+   were added to the live cluster via `helm upgrade` after hitting exactly
+   this — bake them into the install so a fresh bootstrap doesn't repeat it.
 4. `kubectl apply -f k8s/bootstrap/root-app.yaml`
 5. Get the initial admin password:
    `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
@@ -20,4 +32,4 @@ automatically — commit and push, ArgoCD picks it up.
 
 Teardown: delete the `argocd`, `backend`, and `monitoring` namespaces before
 `terraform destroy` in `terraform/environments/dev-eks/` (see the root
-`k8s/RUNBOOK.md` from Task 9 for the full sequence).
+`k8s/RUNBOOK.md` for the full sequence).
