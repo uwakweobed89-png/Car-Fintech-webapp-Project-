@@ -35,6 +35,11 @@ grafana:
     dashboards:
       enabled: true
       label: grafana_dashboard
+      # The sidecar's own default LABEL_VALUE is "1", but the dashboard
+      # ConfigMap (dashboards/car-fintech-dashboard.yaml) labels itself
+      # grafana_dashboard: "true" -- without pinning this, the sidecar never
+      # matches it and only loads the chart's bundled default dashboards.
+      labelValue: "true"
       searchNamespace: monitoring
 
 alertmanager:
