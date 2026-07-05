@@ -11,7 +11,7 @@ spec:
     path: k8s/apps
     directory:
       recurse: true
-      exclude: "**/kustomization.yaml"
+      include: "**/application.yaml"
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
