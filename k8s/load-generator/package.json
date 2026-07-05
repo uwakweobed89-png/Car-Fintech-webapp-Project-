@@ -1,0 +1,10 @@
+{
+  "name": "car-fintech-load-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Drives realistic traffic against the backend for the EKS/Prometheus/Grafana practice environment",
+  "main": "generate-traffic.js",
+  "scripts": {
+    "start": "node generate-traffic.js"
+  }
+}
