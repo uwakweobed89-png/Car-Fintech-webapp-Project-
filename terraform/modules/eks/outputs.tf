@@ -23,3 +23,15 @@ output "cluster_oidc_issuer_url" {
 output "backend_irsa_role_arn" {
   value = module.backend_irsa.iam_role_arn
 }
+
+output "cluster_security_group_id" {
+  value = module.eks.cluster_security_group_id
+}
+
+# The EKS-managed "primary" cluster SG (auto-created by the EKS control
+# plane) -- this is what Fargate pod ENIs actually get attached to, NOT the
+# module-created aws_security_group.cluster[0] (the "cluster_security_group_id"
+# output above), which is only used for the cluster's own API-server ENIs.
+output "cluster_primary_security_group_id" {
+  value = module.eks.cluster_primary_security_group_id
+}
