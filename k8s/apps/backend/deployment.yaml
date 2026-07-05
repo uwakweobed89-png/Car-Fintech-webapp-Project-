@@ -18,7 +18,7 @@ spec:
       serviceAccountName: backend
       containers:
         - name: backend
-          image: 326709068429.dkr.ecr.us-east-1.amazonaws.com/fintech-payment-api:latest
+          image: 326709068429.dkr.ecr.us-east-1.amazonaws.com/fintech-payment-api:eks-monitoring
           ports:
             - containerPort: 8080
           env:
