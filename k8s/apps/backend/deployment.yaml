@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      serviceAccountName: backend
+      containers:
+        - name: backend
+          image: 326709068429.dkr.ecr.us-east-1.amazonaws.com/fintech-payment-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_SECRET_ARN
+              value: "arn:aws:secretsmanager:us-east-1:326709068429:secret:car-fintech/rds/credentials-r5eVBv"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: ALLOWED_ORIGINS
+              value: ""
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
