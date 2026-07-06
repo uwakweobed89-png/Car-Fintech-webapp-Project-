@@ -112,7 +112,7 @@ a { color: inherit; }
 }
 
 .navbar-hamburger {
-  display: none;
+  display: flex; /* universal nav: the hamburger shows on every device width */
   flex-direction: column;
   justify-content: center;
   gap: 5px;
@@ -153,16 +153,17 @@ a { color: inherit; }
   transition: opacity 0.3s var(--ease), visibility 0.3s var(--ease);
 }
 
-/* Off-canvas side menu for phone + tablet. Hidden past the breakpoint (desktop
-   uses the inline links). Rendered as a sibling of .navbar so the bar's
-   backdrop-filter doesn't capture this fixed positioning. */
+/* Off-canvas side menu — the single nav surface for every device (PC, tablet,
+   phone, watch). Rendered as a sibling of .navbar so the bar's backdrop-filter
+   doesn't capture this fixed positioning. Width is fluid so it stays sensible
+   from ultrawide monitors down to watch-sized viewports. */
 .navbar-drawer {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
   z-index: 50;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 4px;
   width: min(82vw, 340px);
@@ -199,17 +200,9 @@ a { color: inherit; }
   box-shadow: inset 3px 0 0 0 var(--accent);
 }
 
-@media (max-width: 1024px) {
-  /* Needs both classes (.navbar-links + .navbar-links-desktop) so this wins
-     the specificity tie against the base `.navbar-links { display: flex }`
-     rule below, which otherwise re-shows the desktop links. Phone + tablet
-     both fall under this breakpoint so the drawer covers iPads too. */
-  .navbar-links.navbar-links-desktop { display: none; }
-  .navbar-hamburger { display: flex; }
-  .navbar-drawer { display: flex; }
-  .navbar-drawer.is-open { transform: translateX(0); }
-  .navbar-backdrop.is-open { opacity: 1; visibility: visible; }
-}
+/* Open state — applies at every width (the menu is universal, no breakpoint). */
+.navbar-drawer.is-open { transform: translateX(0); }
+.navbar-backdrop.is-open { opacity: 1; visibility: visible; }
 
 /* Solid ink color, not the gradient-clip used for the intro wordmark: at
    nav-link sizes (14-18px) the gradient's green stop drops to ~1.65:1

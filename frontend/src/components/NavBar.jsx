@@ -55,12 +55,6 @@ export default function NavBar({ opacity = 1 }) {
       >
         <NavLink to="/" className="navbar-brand">Car$ync</NavLink>
 
-        <nav className="navbar-links navbar-links-desktop">
-          {LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end}>{link.label}</NavLink>
-          ))}
-        </nav>
-
         <button
           type="button"
           className={`navbar-hamburger${menuOpen ? ' is-open' : ''}`}
