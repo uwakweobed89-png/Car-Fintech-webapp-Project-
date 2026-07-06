@@ -17,7 +17,7 @@ async function main() {
     database: secret.dbname,
     user: secret.username,
     password: secret.password,
-    ssl: { rejectUnauthorized: false },
+    ssl: require('./db-ssl'),
   });
 
   const schema = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');

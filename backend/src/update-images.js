@@ -31,7 +31,7 @@ async function main() {
     database: secret.dbname,
     user: secret.username,
     password: secret.password,
-    ssl: { rejectUnauthorized: false },
+    ssl: require('./db-ssl'),
   });
 
   for (const [id, url] of Object.entries(IMAGES)) {

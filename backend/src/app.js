@@ -3,7 +3,11 @@ const cors = require('cors');
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
 const { Pool } = require('pg');
 
-const app = express();
+// CSRF protection is intentionally omitted: this is a stateless JSON API with
+// no cookie/session auth (admin routes use the X-Admin-Key header), so it is
+// not exposed to classic CSRF, which relies on the browser auto-attaching
+// ambient session cookies. Adding csurf here would add no security value.
+const app = express(); // nosemgrep: javascript.express.security.audit.express-check-csurf-middleware-usage.express-check-csurf-middleware-usage
 
 app.disable('x-powered-by');
 
@@ -59,7 +63,7 @@ async function initDB() {
       database: secret.dbname,
       user: secret.username,
       password: secret.password,
-      ssl: { rejectUnauthorized: false },
+      ssl: require('./db-ssl'),
     });
 
     await pool.query('SELECT 1');

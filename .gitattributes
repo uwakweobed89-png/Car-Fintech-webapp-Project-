@@ -1,0 +1,2 @@
+# Keep certificate bundles byte-for-byte — no CRLF/LF conversion.
+*.pem -text
