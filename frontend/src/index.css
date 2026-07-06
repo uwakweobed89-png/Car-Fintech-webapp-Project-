@@ -152,7 +152,10 @@ a { color: inherit; }
 }
 
 @media (max-width: 720px) {
-  .navbar-links-desktop { display: none; }
+  /* Needs both classes (.navbar-links + .navbar-links-desktop) so this wins
+     the specificity tie against the base `.navbar-links { display: flex }`
+     rule below, which otherwise re-shows the desktop links on mobile. */
+  .navbar-links.navbar-links-desktop { display: none; }
   .navbar-hamburger { display: flex; }
 }
 
