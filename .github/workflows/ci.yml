@@ -1,0 +1,80 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Least privilege by default. Only the deploy job below opts into id-token.
+permissions:
+  contents: read
+
+jobs:
+  # Shared, blocking security gate (Gitleaks + Trivy + Semgrep). Maintained
+  # once in devsecops-pipeline and reused by every project.
+  security:
+    uses: uwakweobed89-png/devsecops-pipeline/.github/workflows/reusable-security.yml@main
+
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm test
+        working-directory: backend
+
+  frontend-build:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+
+  # Deploy the frontend only after every gate passes, only on a push to master
+  # (never on PRs). Uses short-lived OIDC creds — no stored AWS keys.
+  deploy:
+    name: Deploy frontend
+    needs: [security, backend-tests, frontend-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326709068429:role/car-fintech-github-frontend-deploy
+          aws-region: us-east-1
+      - name: Sync build to S3
+        run: aws s3 sync frontend/dist/ s3://car-fintech-frontend-326709068429/ --delete
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id EUS6JMVJ47NHQ --paths "/*"
