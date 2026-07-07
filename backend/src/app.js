@@ -46,30 +46,38 @@ let nextPurchaseId = 1;
 let pool = null;
 
 async function initDB() {
+  const databaseUrl = process.env.DATABASE_URL;
   const secretArn = process.env.DB_SECRET_ARN;
-  if (!secretArn) {
-    console.log('No DB_SECRET_ARN set — running with in-memory data');
+
+  if (!databaseUrl && !secretArn) {
+    console.log('No DATABASE_URL or DB_SECRET_ARN set — running with in-memory data');
     return;
   }
 
   try {
-    const client = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
-    const response = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
-    const secret = JSON.parse(response.SecretString);
+    if (databaseUrl) {
+      // Non-AWS Postgres (Railway, Render, local, ...) via a plain connection
+      // string. `sslmode` in the URL controls TLS; no RDS-specific CA needed.
+      pool = new Pool({ connectionString: databaseUrl });
+    } else {
+      const client = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
+      const response = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
+      const secret = JSON.parse(response.SecretString);
 
-    pool = new Pool({
-      host: secret.host,
-      port: secret.port,
-      database: secret.dbname,
-      user: secret.username,
-      password: secret.password,
-      ssl: require('./db-ssl'),
-    });
+      pool = new Pool({
+        host: secret.host,
+        port: secret.port,
+        database: secret.dbname,
+        user: secret.username,
+        password: secret.password,
+        ssl: require('./db-ssl'),
+      });
+    }
 
     await pool.query('SELECT 1');
-    console.log('Connected to RDS PostgreSQL');
+    console.log(databaseUrl ? 'Connected to PostgreSQL via DATABASE_URL' : 'Connected to RDS PostgreSQL');
   } catch (err) {
-    console.warn('RDS unavailable, falling back to in-memory:', err.message);
+    console.warn('Database unavailable, falling back to in-memory:', err.message);
     pool = null;
   }
 }
